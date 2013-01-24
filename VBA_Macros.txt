@@ -1,0 +1,242 @@
+Sub Date_pivot()
+'
+' Date_pivot Macro
+'
+'
+    Dim x As Variant
+    Dim y As Integer
+    Dim LastRow As Long
+    
+    ' Sets up Sheets and their labels
+    Sheets.Add After:=Sheets(Sheets.Count)
+    Sheets.Add After:=Sheets(Sheets.Count)
+    Sheets.Add After:=Sheets(Sheets.Count)
+    Sheets.Add After:=Sheets(Sheets.Count)
+    
+    Sheets("Sheet1").Activate
+    
+    ' Format Date and Time columns
+    Columns("B:B").Select
+    Selection.NumberFormat = "[$-F400]h:mm:ss AM/PM"
+    Columns("A:A").Select
+    Selection.NumberFormat = "[$-F800]dddd, mmmm dd, yyyy"
+    
+    ' Add in Date, Time, and Extension headers
+    Rows("1:1").Select
+    Selection.Insert Shift:=xlDown, CopyOrigin:=xlFormatFromLeftOrAbove
+    Range("A1").Select
+    ActiveCell.FormulaR1C1 = "Date"
+    Range("B1").Select
+    ActiveCell.FormulaR1C1 = "Time"
+    Range("C1").Select
+    ActiveCell.FormulaR1C1 = "Extension"
+    
+    ' Set x to first specific date
+    x = Range("A2").Text
+    ' Find the last cell with data
+    With ActiveSheet
+        LastRow = .Cells(.Rows.Count, "A").End(xlUp).Row
+    End With
+    
+    ' Create Pivot Table on Sheet2
+    Columns("A:C").Select
+    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        "Sheet1!R1C1:R" & LastRow & "C3", Version:=xlPivotTableVersion14).CreatePivotTable _
+        TableDestination:="Sheet2!R1C1", TableName:="PivotTable3", DefaultVersion _
+        :=xlPivotTableVersion14
+    Sheets("Sheet2").Select
+    Cells(3, 1).Select
+    With ActiveSheet.PivotTables("PivotTable3").PivotFields("Extension")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+    ActiveSheet.PivotTables("PivotTable3").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable3").PivotFields("Date"), _
+        "Count of " & x, xlCount
+    
+    ' Find last cell with data in pivot table
+    With ActiveSheet
+        LastRow = .Cells(.Rows.Count, "A").End(xlUp).Row
+    End With
+    
+    ' Adjust LastRow to account for Grand Total row
+    LastRow = LastRow - 1
+    
+    ' Copy paste to Sheet3
+    Worksheets("Sheet2").Range("A2:B" & LastRow).Copy _
+    Destination:=Worksheets("Sheet3").Range("A2")
+    Sheets("Sheet3").Activate
+    
+    
+End Sub
+
+Sub First_Graph()
+'
+' First_Graph Macro
+'
+
+'
+    Range("A2:C11").Select
+    ActiveSheet.Shapes.AddChart.Select
+    ActiveChart.ChartType = xlColumnClustered
+    ActiveChart.SetSourceData Source:=Range("Sheet3!$A$2:$C$11")
+End Sub
+
+Sub Daily_Calls()
+'
+' Daily_Calls Macro
+'
+
+'
+    Dim LastRow1 As Long
+    Dim LastRow2 As Integer
+    
+    Sheets("Sheet1").Activate
+    
+    With ActiveSheet
+        LastRow1 = .Cells(.Rows.Count, "A").End(xlUp).Row
+    End With
+
+    Columns("A:C").Select
+    Range("C1").Activate
+    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        "Sheet1!R1C1:R" & LastRow1 & "C3", Version:=xlPivotTableVersion14).CreatePivotTable _
+        TableDestination:="Sheet5!R2C1", TableName:="PivotTable7", DefaultVersion _
+        :=xlPivotTableVersion14
+    Sheets("Sheet5").Select
+    Cells(2, 1).Select
+    ActiveSheet.PivotTables("PivotTable7").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable7").PivotFields("Date"), "Count of Date", xlCount
+    With ActiveSheet.PivotTables("PivotTable7").PivotFields("Date")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+    
+    With ActiveSheet
+        LastRow2 = .Cells(.Rows.Count, "A").End(xlUp).Row - 1
+    End With
+    
+    Range("A3:B" & LastRow2).Select
+    Selection.Copy
+    Sheets("Sheet6").Select
+    Range("A2").Select
+    ActiveSheet.Paste
+    
+    LastRow2 = LastRow2 - 1
+    
+    Range("A2:A" & LastRow2).Select
+    Application.CutCopyMode = False
+    Selection.NumberFormat = "[$-F800]dddd, mmmm dd, yyyy"
+    Range("A2:B" & LastRow2).Select
+    Range("B" & LastRow2).Activate
+    ActiveSheet.Shapes.AddChart.Select
+    ActiveChart.ChartType = xlColumnClustered
+    ActiveChart.SetSourceData Source:=Range("Sheet6!$A$2:$B$" & LastRow2)
+End Sub
+
+
+
+Sub Largest_to_Smallest()
+'
+'
+' B then expand
+
+'
+    ' Sort Columns Largest to Smallest
+    Dim x As Integer
+    x = ActiveCell.Row
+    Columns("B:B").Select
+    ActiveWorkbook.Worksheets("Sheet3").Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Sheet3").Sort.SortFields.Add Key:=Range("B1"), _
+        SortOn:=xlSortOnValues, Order:=xlDescending, DataOption:=xlSortNormal
+    With ActiveWorkbook.Worksheets("Sheet3").Sort
+        .SetRange Range("A2:B" & x)
+        .Header = xlGuess
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    
+    ' Insert an empty column in between
+    Columns("B:B").Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+    
+End Sub
+
+
+
+Sub Average_Hourly()
+'
+' Average_Hourly Macro
+'
+
+'
+    Dim LastRow1 As Long
+    Dim LastRow2 As Integer
+    
+    Sheets("Sheet1").Activate
+    
+    With ActiveSheet
+        LastRow1 = .Cells(.Rows.Count, "A").End(xlUp).Row
+    End With
+
+    
+    
+    Columns("A:C").Select
+    Range("C1").Activate
+    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        "Sheet1!R1C1:R" & LastRow1 & "C3", Version:=xlPivotTableVersion14).CreatePivotTable _
+        TableDestination:="Sheet7!R2C1", TableName:="PivotTable9", DefaultVersion _
+        :=xlPivotTableVersion14
+    Sheets("Sheet7").Select
+    Cells(2, 1).Select
+    ActiveSheet.PivotTables("PivotTable9").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable9").PivotFields("Date"), "Count of Date", xlCount
+    With ActiveSheet.PivotTables("PivotTable9").PivotFields("Time")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+    
+    Range("A3").Select
+    Selection.Group Start:=True, End:=True, Periods:=Array(False, False, True, _
+        False, False, False, False)
+        
+    With ActiveSheet
+        LastRow2 = .Cells(.Rows.Count, "A").End(xlUp).Row - 1
+    End With
+    
+    Range("A3:B" & LastRow2).Select
+    Selection.Copy
+    Sheets("Sheet8").Select
+    Range("A2").Select
+    ActiveSheet.Paste
+    
+    LastRow2 = LastRow2 - 1
+    Range("A2:B" & LastRow2).Select
+    Range("B" & LastRow2).Activate
+    ActiveSheet.Shapes.AddChart.Select
+    ActiveChart.ChartType = xlColumnClustered
+    ActiveChart.SetSourceData Source:=Range("Sheet8!$A$2:$B$" & LastRow2)
+End Sub
+
+Sub Cleanup()
+'
+'
+'
+    Sheets("Sheet1").Select
+    Sheets("Sheet1").Name = "Refined Source Data"
+    Sheets("Sheet2").Select
+    Sheets("Sheet2").Name = "Extension Calls Data"
+    Sheets("Sheet3").Select
+    Sheets("Sheet3").Name = "Extension Calls Graph"
+    Sheets("Sheet5").Select
+    Sheets("Sheet5").Name = "Daily Calls Data"
+    Sheets("Sheet6").Select
+    Sheets("Sheet6").Name = "Daily Calls Graph"
+    Sheets("Sheet7").Select
+    Sheets("Sheet7").Name = "Hourly Calls Data"
+    Sheets("Sheet8").Select
+    Sheets("Sheet8").Name = "Hourly Calls Graph"
+    Sheets("Refined Source Data").Select
+End Sub
